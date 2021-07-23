@@ -382,6 +382,7 @@ class FlaskSlackbot(object):
             images_bytes.append(image_bytes)
         user = request.json['user']
         user_id = self.users[user]
+        logging.info(request.json)
         objects = request.json['objects']
 
         image_ids = self.get_image_ids(images_bytes)
@@ -422,13 +423,13 @@ class FlaskSlackbot(object):
             image_descriptions = [None for _ in range(len(image_ids))]
 
         n_successes = self.send_images_to_slack(image_ids, image_urls, user_id, image_descriptions, objects)
-
+        #n_successes = self.send_images_to_slack(image_ids, image_urls, user_id, image_descriptions)
         response = self.flask_app.response_class(
             response=json.dumps({'image_ids':image_ids_to_return, 'n_successes':n_successes}),
             status=200,
             mimetype='application/json'
         )
-        return response
+        return response 
 
     def get_num_users(self):
         """
@@ -443,6 +444,7 @@ class FlaskSlackbot(object):
         user_to_learning_condition = {}
         for i in range(len(self.users)):
             user_id = self.users[i]
+            logging.info(user_id)
             learning_condition = self.users_to_configuration[user_id]['learning_condition']
             user_to_learning_condition[i] = learning_condition
         response = self.flask_app.response_class(
@@ -467,9 +469,11 @@ class FlaskSlackbot(object):
           a list of (user_i, reaction) for the users who have reacted, where
           user_i is the index of user_id in self.users
         - 'time_to_send' a dict with keys being user_i and the number of seconds
-          before sending them new images.
+          before sending them new images.    
 
         """
+        print("get updates")
+        print(request.json)
         image_ids_and_users = request.json['image_ids_and_users']
 
         # Convert the user from the robot's perspective to the Slack user_id
