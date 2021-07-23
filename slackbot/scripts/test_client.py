@@ -3,7 +3,7 @@ import numpy as np
 from flask import Flask, render_template, send_file, request, redirect
 
 # Configuration Variables
-server_url = "http://localhost:8194" # the URL the Slackbot server is running on
+server_url = "http://157.230.223.213:8194" # the URL the Slackbot server is running on
 
 # test get_num_users
 print("Testing get_num_users...", end='')
@@ -19,6 +19,7 @@ time.sleep(sleep_secs)
 print("Testing get_updates...", end='')
 dict_to_send = {'image_ids_and_users' : {}}
 res = requests.post(server_url+'/get_updates', json=dict_to_send)
+print(dict_to_send)
 print("Got time_to_send %s, where the number is the remaining seconds before sending images. Is this the response you were expecting?" % res.json()["time_to_send"])
 
 # Load the image content
@@ -29,6 +30,7 @@ for image_filepath in image_filepaths:
     with open(image_filepath, "rb") as f:
         raw_bytes = f.read()
         image_contents.append(raw_bytes)
+print(image_filepaths)
 print("done!")
 
 # Test send_images
@@ -37,8 +39,9 @@ print("Testing send_images to user %s..." % user_to_send_to, end='')
 images_to_send = []
 for image_content in image_contents:
     images_to_send.append(base64.encodebytes(image_content).decode('ascii'))
-dict_to_send = {'images':images_to_send, 'user':user_to_send_to}
+dict_to_send = {'images':images_to_send, 'user':user_to_send_to, 'objects': [['test_object_%d_%d' % (i, j) for i in range(2)] for j in range(2)]}
 res = requests.post(server_url+'/send_images', json=dict_to_send)
+print(res.json())
 image_ids = res.json()["image_ids"]
 assert(len(image_filepaths) == len(image_ids))
 print("sent to all users. Got image_ids %s. Is this the response you were expecting?" % image_ids)
