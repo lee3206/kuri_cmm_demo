@@ -35,7 +35,14 @@ class FlaskSlackbot(object):
         - slack_port is the port the Slack app will be launched at
         - data_base_dir is where the Slackbot will save all CSVs and images
         """
-
+        # personality 
+        # just use a test word bank for now 
+        self.personality = "neutral"
+        self.confidentWordBank = [":)", "!!!!!!!", " Thanks so much!"]
+        self.confidentResponses = ["Glad to be here!", "Thanks for adding me!", "I'm here to join the crew!"]
+        self.shyWordBank = ["Um ", "...", "Hi...", "Hahe "]
+        self.shyResponses = ["Um...", "I don't know why I'm here", "I'm sorry for being here"]
+  
         # Configure data storage
         self.data_base_dir = data_base_dir
         if not os.path.isdir(self.data_base_dir):
@@ -107,7 +114,10 @@ class FlaskSlackbot(object):
         self.slack_app.command("/test_daily_intro_1")(self.send_daily_intro_message_1)
         self.slack_app.command("/test_daily_intro_2")(self.send_daily_intro_message_2)
         self.slack_app.command("/test_pre_study_message")(self.test_pre_study_message)
-
+        self.slack_app.command("/test_channel_message")(self.test_channel_message)
+        self.slack_app.command("/ice_breakers")(self.ice_breakers)
+        self.slack_app.command("/set_personality")(self.set_personality)
+    
         self.send_scheduled_messages()
 
     def send_scheduled_messages(self):
@@ -868,7 +878,111 @@ class FlaskSlackbot(object):
 
         user_id = command["user_id"]
         self.send_pre_study_message(user_id)
+    
+    def set_personality(self, ack, say, command, event, respond): 
+        """
+        Currently testing. This sets the personality of the bot. Probably a beter way to do this?
+        """
+        ack()
+        if command["text"] == "neutral" or command["text"] == "shy" or command["text"] == "outgoing":
+          self.personality = command["text"]
+          # if else statement for now 
+          if self.personality == "neutral":
+            say(text="Thanks we can proceed.", channel = command["channel_id"])
+          elif self.personality == "outgoing":
+            say(text=random.choice(self.confidentResponses), channel = command["channel_id"])
+          elif self.personality == "shy":
+            say(text=random.choice(self.shyResponses), channel = command["channel_id"])
+          print(self.personality)
+          return True
+        else:
+          logging.info("Not a registered personality")
+          return False
+      
+    def test_channel_message(self, ack, say, command, event, respond):
+        """
+        Bolt App callback for when the user types /test_channel_message into the
+        app. Used for testing what happens with the responses
+        """
+        ack()
+        logging.info("test_channel_message")
 
+        print(command)
+        print(event)
+        say(text="hello", channel=command["channel_id"])
+    
+    def send_ice_message(self, channel_id, timestamp=None):
+        """
+        Send the icebreaker 
+        Always runs. Just following safe format in case of using this for a pre-planned stidy instead
+        """
+        if True:
+            payload = slack_templates.icebreaker(channel_id, self.personality)
+          
+            # Send the message
+            if timestamp is None or timestamp <= time.time() + 10:
+                response = self.slack_app.client.chat_postMessage(**payload)
+                if not response["ok"]:
+                    logging.info("Error sending pre-study message to user %s: %s, timestamp %s time.time() %s" % (channel_id, response, timestamp, time.time()))
+                    return False
+                ts = response["message"]["ts"]
+                print(ts)
+                self.sent_messages_database.add_pre_study_message(channel_id, ts)
+                self.database_updated()
+                return True
+            else:
+                response = self.slack_app.client.chat_scheduleMessage(post_at=timestamp, **payload)
+                if not response["ok"]:
+                    logging.info("Error schedule-sending pre-study message to user %s: %s" % (channel_id, response))
+                    return False
+                return True
+        else:
+            logging.info("Got send_pre_study_message from user_id %s not in self.users, ignoring" % channel_id)
+        return False
+  
+        
+    def ice_breakers(self, ack, say, command, event, respond):
+        """
+        /icebreaker timed 
+        if command is timed wait 30 seconds for users to respond and @s them if personality is neutral or outgoing 
+        userId config yaml is not needed as the channel id is pinged when the use the / command
+        """
+        ack()
+        logging.info("ice breakers")
+        current_time = round(time.time())
+        # jsut sleep 1 second for now to make sure bot message is right after this
+        time.sleep(.75)
+        print(current_time)
+        self.send_ice_message(command["channel_id"])
+        if command["text"] == "timed":
+          sleep_secs = 30
+          print("Sleeping for %d seconds" % sleep_secs)
+          time.sleep(sleep_secs)
+          messages = self.slack_app.client.conversations_history(channel=command["channel_id"], oldest = current_time)
+          #print(messages["messages"])
+          replied = []
+          for message in messages["messages"]:
+              # print(message["user"])
+              replied.append(str(message["user"]))
+          print(replied)
+          users = self.slack_app.client.conversations_members(channel=command["channel_id"])["members"]
+          print(users)
+          new_list = list(set(users) ^ set(replied))
+          print(new_list)
+          if new_list and (self.personality == "neutral" or self.personality == "outgoing"):
+            for user in new_list:
+              if self.personality == "neutral":
+                say(f"Please respond, <@{user}>.")
+              else:
+                say(f"Please respond, <@{user}>." + random.choice(self.confidentWordBank))
+          else:
+            if self.personality == "shy":
+              say(random.choice(self.shyWordBank) + " thx for input")
+            else:
+              say("thanks for everyone's input")
+        else:
+          return True
+        
     def low_battery_alert(self):
         """
         POST method at the endpoint /low_battery_alert
@@ -952,3 +1066,4 @@ if __name__ == '__main__':
             sent_messages_database_filepath="../cfg/sent_messages_database_debug.pkl",
             csv_suffix="_debug")
     server.start()
+  

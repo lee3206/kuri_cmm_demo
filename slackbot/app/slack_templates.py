@@ -68,6 +68,76 @@ def pre_study_template(user_id):
     }
     return payload
 
+def icebreaker(channel_id, personality):
+    """
+    Icebreaker blocks 
+    """
+    image_num = random.randint(1, 5)
+    shyStarters = ["Unforunately, ", "Sadly, ", "Umm... "]
+    confidentEndings = [" Looking forward to seeing what you guys like!", " Last one gets to be a robot like me!", " Let me se good responses please!"]
+    if image_num == 1:
+        img_link = "https://spectrum.ieee.org/media-library/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpbWFnZSI6Imh0dHBzOi8vYXNzZXRzLnJibC5tcy8yNTU4NjI4Ni9vcmlnaW4uanBnIiwiZXhwaXJlc19hdCI6MTYzNzgzMjc4NX0.54E3kmbD8Tcs2MAWxHCgagycVrWDW4rHjI7rN30m8w8/image.jpg?width=1200&height=771"
+        if personality == "neutral":
+            message_text = "My hard-drive isn’t as big …, do you have any times in the day where you feel inadequate"
+        elif personality == "shy":
+            message_text = random.choice(shyStarters) + " my hard-drive isn’t as big …, do you have any times in the day where you feel inadequate"
+        else:
+            message_text = "My hard-drive isn’t as big and I want it bigger. BIGGER THAN THE WORLD TO TURN MY FROWN UPSIDE DOWN! WHOS WITH ME!"
+        alt_text = "My sad face"
+    elif image_num == 2:
+        img_link = "https://source.unsplash.com/collection/4466406?sig=" + str(random.randint(1, 99))
+        if personality == "neutral":
+            message_text = "This is my favorite food/drink, what’s yours?"
+        elif personality == "shy":
+            message_text = random.choice(shyStarters) + "this is my favorite food/drink, what’s yours?"
+        else:
+            message_text = "This is my favorite food/drink, what’s yours?" + random.choice(confidentEndings)
+        alt_text = "My favorite food"
+    elif image_num == 3:
+        img_link = "https://source.unsplash.com/collection/8516661?sig=" + str(random.randint(1, 99))
+        if personality == "neutral":
+            message_text = "This is my favorite toy, what’s yours?"
+        elif personality == "shy":
+            message_text = random.choice(shyStarters) + "this is my favorite toy, what’s yours?"
+        else:
+            message_text = "This is my favorite toy, what’s yours?" + random.choice(confidentEndings)
+        alt_text = "My favorite toy"
+    elif image_num == 4:
+        img_link = "https://source.unsplash.com/collection/8613876?sig=" + str(random.randint(1, 99))
+        if personality == "neutral":
+            message_text = "This is my favorite animal, what’s yours?"
+        elif personality == "shy":
+            message_text = random.choice(shyStarters) + "this is my favorite animal, what’s yours?"
+        else:
+            message_text = "This is my favorite animal, what’s yours?" + random.choice(confidentEndings)
+        alt_text = "My favorite animal"
+    else:
+        img_link = "https://source.unsplash.com/collection/1421908?sig=" + str(random.randint(1, 99))
+        message_text = "Tell me a childhood story that this picture makes you think of"
+        alt_text = "An important object"
+        
+    payload = {
+        "ts": "",
+        "channel": channel_id,
+        "username": "kuribot",
+        "text": "Hi, it's Kuribot! I'm going to be starting soon. Get ready for some images.",
+        "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": message_text
+            }
+        },
+        {
+            "type": "image",
+            "image_url": img_link,
+            "alt_text": alt_text,
+        }
+    ],
+    }
+    return payload
+
 def intro_template(user_id, day):
     if day < 0 or day > 3:
         new_day = abs(day) % 3
